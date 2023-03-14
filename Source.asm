@@ -1,107 +1,40 @@
-.386
-.MODEL flat, stdcall
-includelib kernel32.lib
-
-STD_INPUT_HANDLE EQU -10
+.686 
+.model flat, stdcall 
+option casemap : none 
+includelib kernel32.lib 
+;include d:\MASM3\masm32\include\windows.inc  
+include D:\MASM3\masm32\masm32\include\kernel32.inc 
+;------------------------------------------------------------------
+GENERIC_READ EQU 80000000h
+DO_NOT_SHARE EQU 0
+NULL EQU 0
+OPEN_EXISTING EQU 3
+FILE_ATTRIBUTE_NORMAL EQU 80h
 STD_OUTPUT_HANDLE EQU -11
-WriteConsole EQU <WriteConsoleA>
-ReadConsole EQU <ReadConsoleA>
-WriteConsoleOutputCharacter EQU <WriteConsoleOutputCharacterA>
+GENERIC_WRITE EQU 40000000h
+FILE_END EQU 2
+CreateFile 	EQU <CreateFileA>
+WriteConsole 	EQU <WriteConsoleA>
+HANDLE TEXTEQU <DWORD>
+FILE_SHARE_READ = 00000001h 
+FILE_SHARE_WRITE = 00000002h 
 
-BufSize = 100
-COORD struc
-x word ?
-y word ?
-COORD ends
+;------------------------------------------------------------------
+.data 
+handle dword 0 
+buffer dword 512 dup(?) 
+bytesRead dword 0 
+;------------------------------------------------------------------
+.code 
+ReadDrive PROC C driveName: DWORD 
 
+invoke CreateFile, driveName, GENERIC_READ, FILE_SHARE_READ+FILE_SHARE_WRITE, NULL, OPEN_EXISTING, NULL, NULL 
+mov handle,eax 
 
-GetStdHandle PROTO, nStdHandle:DWORD
-ExitProcess PROTO :DWORD
+invoke ReadFile, handle, ADDR buffer, 512, ADDR bytesRead, 0 
 
-ReadConsole PROTO,
-handle: DWORD,
-pBuffer: PTR BYTE,
-maxBytes: DWORD,
-pBytesRead: PTR DWORD,
-notUsed: DWORD
-
-WriteConsole PROTO,
-handle: DWORD,
-pBuffer: PTR BYTE,
-bufsize: DWORD,
-pCount: PTR DWORD,
-lpReserved: DWORD
-
-WriteConsoleOutputAttribute PROTO,
-handle: DWORD,
-pAttribute: PTR WORD,
-nLength: DWORD,
-xyCoord: COORD,
-lpCount: PTR DWORD
-
-SetConsoleTextAttribute PROTO,
-outHandle:DWORD,
-NCOLOR:DWORD
-
-WriteConsoleOutputCharacter PROTO,
-outHAndle:DWORD,
-pBuffer:DWORD,
-bufSize:DWORD,
-xyCoord:COORD,
-lpCount:PTR DWORD
-
-.data
-
-inputHandle DWORD ?
-buffer BYTE BufSize DUP(?),0,0
-bytesRead dd ?
-attributes WORD 0Fh, 0Eh,0Dh,0Ch, 0Bh, 0Ah, 6,1,4,3
-WORD 0Fh, 0Eh,0Dh,0Ch, 0Bh, 0Ah, 3, 4, 9, 2
-WORD 0Fh, 0Eh,0Dh,0Ch, 0Bh, 0Ah, 2,1,6,8
-WORD 0Fh, 0Eh,0Dh,0Ch, 0Bh, 0Ah, 3, 4, 9, 2
-WORD 0Fh, 0Eh,0Dh,0Ch, 0Bh, 0Ah, 3, 4, 9, 2
-WORD 0Fh, 0Eh,0Dh,0Ch, 0Bh, 0Ah, 8,3,5,1
-WORD 0Fh, 0Eh,0Dh,0Ch, 0Bh, 0Ah, 3, 4, 9, 2
-WORD 0Fh, 0Eh,0Dh,0Ch, 0Bh, 0Ah, 0,2,8,9
-WORD 0Fh, 0Eh,0Dh,0Ch, 0Bh, 0Ah, 3, 4, 9, 2
-WORD 0Fh, 0Eh,0Dh,0Ch, 0Bh, 0Ah, 1,0,2,3
-xyPos COORD <1,2>
-
-.code
-main PROC
-
-INVOKE GetStdHandle, STD_INPUT_HANDLE
-mov inputHandle, eax
-INVOKE ReadConsole,
-inputHandle,
-ADDR buffer,
-BufSize-2,
-ADDR bytesRead,
-0
-
-INVOKE GetStdHandle, STD_OUTPUT_HANDLE
-mov inputHandle, eax
-INVOKE WriteConsole,
-inputHandle,
-ADDR buffer,
-BufSize-2,
-ADDR bytesRead,
-0
-
-INVOKE WriteConsoleOutputAttribute,
-inputHandle,
-ADDR attributes,
-bufSize-2,
-xyPos,
-ADDR bytesRead
-
-INVOKE WriteConsoleOutputCharacter,
-inputHandle,
-ADDR buffer,
-BufSize - 2,
-xyPos,
-ADDR bytesRead
-
-call ExitProcess
-main ENDP
-end main
+invoke CloseHandle,handle 
+mov eax, offset buffer 
+ret 
+ReadDrive ENDP 
+END
